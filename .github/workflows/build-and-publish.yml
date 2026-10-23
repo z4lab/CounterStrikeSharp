@@ -11,7 +11,7 @@ on:
   push:
     paths-ignore:
       - "docfx/**"
-    branches: ["main"]
+    branches: ["main", "z4lab/**"]
     tags:
       - "v*"
   pull_request:
@@ -68,6 +68,16 @@ jobs:
         with:
           submodules: "recursive"
 
+      - name: Patch SDK for CS2 1.41.9.2
+        # 1.41.9.2 added IVEngineServer2::IsSpawnGroupLoadedForClient after MakeSpawnGroupActive (s2sdk 2261b6d),
+        # without it every engine call past that slot is off by one
+        shell: bash
+        run: |
+          f=libraries/hl2sdk-cs2/public/eiface.h
+          grep -q IsSpawnGroupLoadedForClient "$f" || sed -i '/MakeSpawnGroupActive(/a\    virtual bool IsSpawnGroupLoadedForClient( CPlayerSlot nSlot, SpawnGroupHandle_t spawnGroup ) = 0;' "$f"
+          grep -n -A1 'MakeSpawnGroupActive(' "$f"
+          test "$(grep -c IsSpawnGroupLoadedForClient "$f")" = 1
+
       - name: Build
         run: |
           mkdir -p build
@@ -103,6 +113,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           submodules: "recursive"
+
+      - name: Patch SDK for CS2 1.41.9.2
+        # 1.41.9.2 added IVEngineServer2::IsSpawnGroupLoadedForClient after MakeSpawnGroupActive (s2sdk 2261b6d),
+        # without it every engine call past that slot is off by one
+        shell: bash
+        run: |
+          f=libraries/hl2sdk-cs2/public/eiface.h
+          grep -q IsSpawnGroupLoadedForClient "$f" || sed -i '/MakeSpawnGroupActive(/a\    virtual bool IsSpawnGroupLoadedForClient( CPlayerSlot nSlot, SpawnGroupHandle_t spawnGroup ) = 0;' "$f"
+          grep -n -A1 'MakeSpawnGroupActive(' "$f"
+          test "$(grep -c IsSpawnGroupLoadedForClient "$f")" = 1
 
       - name: Build
         run: |
